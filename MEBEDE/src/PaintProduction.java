@@ -81,7 +81,8 @@ public class PaintProduction {
 			//calculates the time that each machine is working (Question B)
 			for (int i=0; i < 5; i++) {
 				for (int j=0; j < machine[i].size() - 1; j++) {
-					timeOfMachine[i] = timeOfMachine[i] + machine[i].get(j).quantity * 6;
+					timeOfMachine[i] = timeOfMachine[i] + machine[i].get(j).quantity * 6 
+							+ transitionTime[machine[i].get(j).ID - 1][machine[i].get(j + 1).ID - 1];
 
 					//adds extra 15 mins if the next color is different than the current
 					if(machine[i].get(j).dark != machine[i].get(j + 1).dark) {
