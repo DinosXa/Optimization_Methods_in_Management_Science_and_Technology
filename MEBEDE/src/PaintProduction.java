@@ -1,15 +1,14 @@
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Random; 
 import java.util.Collections;
+import java.util.Random;
 
 
 public class PaintProduction {
 	
 	public static void main(String args[]) {
-			
+		
+		//Create random orders and add them to orders' array list
 		ArrayList<Order> orders = new ArrayList<>();
-	
 		int bday = 19092000;
 		Random ran = new Random(bday);
 		int totOrders = 100; //change to 100
@@ -23,29 +22,26 @@ public class PaintProduction {
 			}
 			Order o = new Order(i + 1, qq , drk);
 			orders.add(o);
-		} 
+		}
 			
+		//Create random transition times and add them to transitions' table
 		double[][] transitionTime = new double[totOrders][totOrders];
-			
-			for (int i = 0; i < totOrders; i++) {
-				for (int j = 0; j< totOrders; j++) {
-					double randTime = 10 + 20 * ran.nextDouble();
-					randTime = Math.round(randTime * 100.0)/100.0;
-					if (i==j) {
-						randTime = 0;
-					}
-					transitionTime[i][j] = randTime;
+		for (int i = 0; i < totOrders; i++) {
+			for (int j = 0; j< totOrders; j++) {
+				double randTime = 10 + 20 * ran.nextDouble();
+				randTime = Math.round(randTime * 100.0)/100.0;
+				if (i==j) {
+					randTime = 0;
 				}
-		
+				transitionTime[i][j] = randTime;
 			}
+		}
 
-			simpleAlgo(transitionTime, totOrders, orders);
-			greedyAlgo(transitionTime, totOrders, orders);
+		simpleAlgo(transitionTime, totOrders, orders);
+		greedyAlgo(transitionTime, totOrders, orders);
 	}
 	
-	
 	public static void simpleAlgo(double[][] transitionTime, int totOrders, ArrayList<Order> orders) {
-		PaintProduction pp = new PaintProduction();	
 		ArrayList<Order>[] machine = new ArrayList[5];
 			
 		for (int i = 0; i < 5; i++){
@@ -66,7 +62,7 @@ public class PaintProduction {
 		for(int i=0; i<5; i++) {
 			timeOfMachine[i] = 0;
 		}
-		timeOfMachine = pp.findOperationTimeOfEachMachine(machine, transitionTime);
+		timeOfMachine = findOperationTimeOfEachMachine(machine, transitionTime);
 		
 		System.out.println("\nSimple:");
 		for(int i=0; i < 5; i++) {
@@ -99,7 +95,6 @@ public class PaintProduction {
 	}
 			
 	// Problem C
-	
 	public static void greedyAlgo(double[][] transitionTime, int totOrders, ArrayList<Order> orders) {
 		
 		//Initialize machines' time
@@ -117,29 +112,27 @@ public class PaintProduction {
 		int iom = 0;
 		double ord1 = 0, ord2 = 0;
 		
-		for (int i=0; i < totOrders-2; i=i+2) {
+		for (int i=0; i < totOrders; i=i+2) {
 			ord1 = orders.get(i).quantity*6 + transitionTime[i][i+1];
 			ord2 = orders.get(i+1).quantity*6 + transitionTime[i+1][i];
 			
 			
 			if(ord1 < ord2) {
-				machine[iom].add( orders.get(i) );
+				machine[iom].add(orders.get(i));
+				machine[iom].add(orders.get(i+1));
 			}else {
-				machine[iom].add( orders.get(i+1) );
+				machine[iom].add(orders.get(i+1));
+				machine[iom].add(orders.get(i));
 			}
-			
+						
 			iom = findIdOfMinOperationTime(timeOfMachine);
 			timeOfMachine = findOT(machine, transitionTime);
-			
-			
 		}
+		
 		System.out.println("\nGreedy:");
 		for(int i=0; i < 5; i++) {
 			System.out.printf("Time of machine %s: %s\n", i+1, timeOfMachine[i]);
 		}
-		
-
-	
 	}
 	
 	public static double[] findOT(ArrayList<Order>[] machine, double[][] transitionTime) {
