@@ -26,12 +26,12 @@ public class PaintProduction {
 			orders.add(o);
 		} 
 		
-		 for (int i = 0; i < orders.size();i++) 
-	      { 
-			 System.out.print(orders.get(i).ID + " ");
-			 System.out.print(orders.get(i).quantity + " ");  
-	         System.out.print(orders.get(i).dark + "\n");
-	      }   
+//		 for (int i = 0; i < orders.size();i++) 
+//	      { 
+//			 System.out.print(orders.get(i).ID + " ");
+//			 System.out.print(orders.get(i).quantity + " ");  
+//	         System.out.print(orders.get(i).dark + "\n");
+//	      }   
 	
 			
 		double[][] transitionTime = new double[totOrders][totOrders];
@@ -51,6 +51,7 @@ public class PaintProduction {
 			//start. construction (question A)
 
 			pp.simpleAlgorythm(transitionTime, totOrders, orders);
+			pp.greedyAlgorythm(transitionTime, totOrders, orders);
 			
 
 	}
@@ -64,7 +65,7 @@ public class PaintProduction {
 		ArrayList<Order>[] machine = new ArrayList[5];
 		
 		for (int i = 0; i < 5; i++){
-			machine[i]= new ArrayList<Order>();
+			machine[i] = new ArrayList<Order>();
 		
 		}
 		
@@ -78,8 +79,7 @@ public class PaintProduction {
 		}
 		
 		double[] timeOfMachine = pp.findOperationTimeOfEachMachine(machine, transitionTime);
-		System.out.println(pp.findMaxOperationTime(timeOfMachine));
-				
+		System.out.println("Simple Solution: " + pp.findMaxOperationTime(timeOfMachine) +"\n");				
 	}
 	
 	/*
@@ -89,12 +89,42 @@ public class PaintProduction {
 		
 		PaintProduction pp = new PaintProduction();
 		ArrayList<Order>[] machine = new ArrayList[5];
+		ArrayList<Order>[] machineDemo = new ArrayList[5];
+		double[] timeOfMachine;
+		int minPos;
+		Order lastOrder;
+		Order nextBestOrder;
 		
 		for (int i = 0; i < 5; i++){
-			machine[i]= new ArrayList<Order>();
+			machine[i] = new ArrayList<Order>();
+			machineDemo[i] = new ArrayList<Order>();
+		}
+		//add the first order to the first machine
+		machine[0].add(orders.get(0));
+		machineDemo[0].add(orders.get(0));
+		orders.get(0).setPicked(true);
 		
+		for (int i = 1; i < totOrders; i++)	{
+			for (int j = 0; j < 5; j++) {
+				machineDemo[j].add(orders.get(i));
+			}
+			
+			timeOfMachine = pp.findOperationTimeOfEachMachine(machineDemo, transitionTime);
+			minPos = findMinOperationTimePosition(timeOfMachine);
+			lastOrder = findLastOrderOfMachine(machineDemo[minPos]);
+			nextBestOrder = findNextBestOrder(lastOrder, totOrders, orders, transitionTime);
+			machine[minPos].add(nextBestOrder);
+
+			timeOfMachine = pp.findOperationTimeOfEachMachine(machine, transitionTime);
+			for (int j = 0; j < 5; j++) {
+				machineDemo[j].remove(machineDemo[j].size() - 1);
+			}
+			
+			machineDemo[minPos].add(nextBestOrder);			
 		}
 		
+		timeOfMachine = pp.findOperationTimeOfEachMachine(machine, transitionTime);
+		System.out.println("Greedy Solution: " + pp.findMaxOperationTime(timeOfMachine));
 	}
 	
 	/*
@@ -108,20 +138,28 @@ public class PaintProduction {
 		}
 		
 		for (int i=0; i < 5; i++) {
-			for (int j=0; j < machine[i].size() - 1; j++) {
-				timeOfMachine[i] = timeOfMachine[i] + machine[i].get(j).quantity * 6 
-						+ transitionTime[machine[i].get(j).ID - 1][machine[i].get(j + 1).ID - 1];
-
-				//adds extra 15 mins if the next color is different than the current
-				if(machine[i].get(j).dark != machine[i].get(j + 1).dark) {
-					timeOfMachine[i] += 15 * 60;
+			
+			if(machine[i].size() == 1) {
+				timeOfMachine[i] = timeOfMachine[i] + machine[i].get(0).quantity * 6;
+			} else {
+			
+				for (int j=0; j < machine[i].size() - 1; j++) {
+					timeOfMachine[i] = timeOfMachine[i] + machine[i].get(j).quantity * 6 
+							+ transitionTime[machine[i].get(j).ID - 1][machine[i].get(j + 1).ID - 1];
+	
+					//adds extra 15 mins if the next color is different than the current
+					if(machine[i].get(j).dark != machine[i].get(j + 1).dark) {
+						timeOfMachine[i] += 15 * 60;
+					}
+				}
+				
+				if(machine[i].size() > 1) {
+					timeOfMachine[i] = timeOfMachine[i] + machine[i].get(machine[i].size() - 1).quantity * 6; //adds the time of the last order of curr machine.
 				}
 			}
-			timeOfMachine[i] = timeOfMachine[i] + machine[i].get(machine[i].size() - 1).quantity * 6; //adds the time of the last order of curr machine.
 		}
 		
 		return timeOfMachine;
-	
 	}
 	
 	/*
@@ -140,7 +178,80 @@ public class PaintProduction {
 	}
 	
 	
-	// question C . na katataksoume tis parageleies me vasi to xroma k meta min(tranisistion time).
+	/*
+	 * Finds the position(id/number) of the min operation time of the machines
+	 */
+	public int findMinOperationTimePosition(double[] timeOfMachine) {
+		double minOpTime = timeOfMachine[0];
+		int pos = 0;
+		
+		for(int i = 1; i < timeOfMachine.length; i++ ) {
+			if(timeOfMachine[i] < minOpTime) {
+				minOpTime = timeOfMachine[i];
+				pos = i;
+			}
+		}
+		
+		return pos;
+	}
+		
+	/*
+	 * Find the last order of a specific machine
+	 */
+	public Order findLastOrderOfMachine(ArrayList<Order> minTimeMachine) {
+		Order lastOrder;
+		if(minTimeMachine.size() == 0) {
+			lastOrder = null;
+		} else {
+			lastOrder = minTimeMachine.get(minTimeMachine.size() - 1);
+		}
+		return lastOrder;
+	}
+
+	/*
+	 * Find the order with that will add the minimum operation time.
+	 */
+	public Order findNextBestOrder(Order lastOrder, int totOrders, ArrayList<Order> orders, double[][] transitionTime) {
+		Order nextBestOrder = null;
+		int lastOrderID = lastOrder.getID();
+		
+		Order nextOrder;
+		int nextOrderID;
+		double newAddedTime;
+		double addedTime = 999999999;
+		
+		for (int i = 0; i < totOrders; i++) {
+			nextOrder = orders.get(i);
+			nextOrderID = nextOrder.getID();
+			newAddedTime = findNewAddedTime(lastOrder, nextOrder, transitionTime);
+			
+			if(lastOrderID != nextOrderID && addedTime > newAddedTime && !nextOrder.isPicked()) {
+				nextBestOrder = nextOrder;
+				addedTime = newAddedTime;
+			}
+			
+		}
+		nextBestOrder.setPicked(true);
+		
+		return nextBestOrder;
+	}
+	
+	/*
+	 * Find the operation time that will be added if the nextOrder is added after the lastOrder.
+	 * It does not take into account the time for the production of the nextOrder,
+	 * because it does not help the algorithm to come up with a better solution.
+	 */
+	public double findNewAddedTime(Order lastOrder, Order nextOrder, double[][] transitionTime) {
+		double newAddedtime = 0;
+		
+		if(lastOrder.isDark() != nextOrder.isDark()) {
+			newAddedtime += 15 * 60;
+		}
+		
+		newAddedtime += transitionTime[lastOrder.getID() - 1][nextOrder.getID() - 1];
+
+		return newAddedtime;
+	}
 		
 }
 
