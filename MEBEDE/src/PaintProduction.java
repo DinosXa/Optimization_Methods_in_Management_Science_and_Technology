@@ -6,7 +6,7 @@ import java.util.Random;
 public class PaintProduction {
 	
 	public static void main(String args[]) {
-		
+		long startTime = System.nanoTime();
 		//Create random orders and add them to orders' array list
 		ArrayList<Order> orders = new ArrayList<>();
 		int bday = 19092000;
@@ -39,6 +39,10 @@ public class PaintProduction {
 
 		simpleAlgo(transitionTime, totOrders, orders);
 		greedyAlgo(transitionTime, totOrders, orders);
+		
+		long endTime   = System.nanoTime();
+		long totalTime = endTime - startTime;
+		System.out.printf("\nTotal time: %d", totalTime);
 	}
 	
 	public static void simpleAlgo(double[][] transitionTime, int totOrders, ArrayList<Order> orders) {
@@ -52,9 +56,7 @@ public class PaintProduction {
 		for (int i=0; i < totOrders; i++) {
 			machine[k].add(orders.get(i));
 			k++;
-			if(k==5) {
-				k = 0;
-			}
+			k = k==5 ? 0 : k;
 		}
 		
 		double[] timeOfMachine = new double[5];
@@ -80,15 +82,15 @@ public class PaintProduction {
 		
 		for (int i=0; i < 5; i++) {
 			for (int j=0; j < machine[i].size() - 1; j++) {
-				timeOfMachine[i] = timeOfMachine[i] + machine[i].get(j).quantity * 6 
-						+ transitionTime[machine[i].get(j).ID - 1][machine[i].get(j + 1).ID - 1];
+				timeOfMachine[i] += machine[i].get(j).quantity * 6 
+								 + transitionTime[machine[i].get(j).ID - 1][machine[i].get(j + 1).ID - 1];
 
 				//adds extra 15 minutes if the next color is different than the current
 				if(machine[i].get(j).dark != machine[i].get(j + 1).dark) {
 					timeOfMachine[i] += 15 * 60;
 				}
 			}
-			timeOfMachine[i] = timeOfMachine[i] + machine[i].get(machine[i].size() - 1).quantity * 6; //adds the time of the last order of current machine.
+			timeOfMachine[i] += machine[i].get(machine[i].size() - 1).quantity * 6; //adds the time of the last order of current machine.
 		}
 		
 		return timeOfMachine;
@@ -108,14 +110,18 @@ public class PaintProduction {
 			
 		//Sorting orders by quantity
 		Collections.sort(orders, (o1, o2) -> Double.compare(o1.quantity, o2.quantity));
-		
+				
 		int iom = 0;
 		double ord1 = 0, ord2 = 0;
-		
-		for (int i=0; i < totOrders; i=i+2) {
-			ord1 = orders.get(i).quantity*6 + transitionTime[i][i+1];
-			ord2 = orders.get(i+1).quantity*6 + transitionTime[i+1][i];
+		for (int i=0; i <= totOrders-2; i=i+2) {
 			
+			if(orders.get(i).ID==100 || orders.get(i+1).ID==100) {
+				ord1 = transitionTime[99][orders.get(i+1).ID];
+				ord2 = transitionTime[orders.get(i+1).ID][99];
+			}else {
+				ord1 = transitionTime[orders.get(i).ID][orders.get(i+1).ID];
+				ord2 = transitionTime[orders.get(i+1).ID][orders.get(i).ID];
+			}
 			
 			if(ord1 < ord2) {
 				machine[iom].add(orders.get(i));
@@ -126,7 +132,7 @@ public class PaintProduction {
 			}
 						
 			iom = findIdOfMinOperationTime(timeOfMachine);
-			timeOfMachine = findOT(machine, transitionTime);
+			timeOfMachine = calculateOT(machine, transitionTime);
 		}
 		
 		System.out.println("\nGreedy:");
@@ -135,7 +141,7 @@ public class PaintProduction {
 		}
 	}
 	
-	public static double[] findOT(ArrayList<Order>[] machine, double[][] transitionTime) {
+	public static double[] calculateOT(ArrayList<Order>[] machine, double[][] transitionTime) {
 		double[] timeOfMachine = new double[5];
 		
 		for(int i=0; i<5; i++) {
@@ -144,7 +150,7 @@ public class PaintProduction {
 		
 		for (int i=0; i < 5; i++) {
 			for (int j=0; j < machine[i].size() - 1; j++) {
-				timeOfMachine[i] = timeOfMachine[i] + machine[i].get(j).quantity * 6 
+				timeOfMachine[i] += machine[i].get(j).quantity * 6 
 						+ transitionTime[machine[i].get(j).ID - 1][machine[i].get(j + 1).ID - 1];
 
 				//adds extra 15 minutes if the next color is different than the current
@@ -152,7 +158,6 @@ public class PaintProduction {
 					timeOfMachine[i] += 15 * 60;
 				}
 			}
-//			timeOfMachine[i] = timeOfMachine[i] + machine[i].get(machine[i].size() - 1).quantity * 6; //adds the time of the last order of current machine.
 		}
 		
 		return timeOfMachine;
