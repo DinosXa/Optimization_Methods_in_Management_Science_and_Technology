@@ -113,6 +113,7 @@ public class PaintProduction {
 				
 		int iom = 0;
 		double ord1 = 0, ord2 = 0;
+		
 		for (int i=0; i <= totOrders-2; i=i+2) {
 			
 			if(orders.get(i).ID==100 || orders.get(i+1).ID==100) {
@@ -120,7 +121,7 @@ public class PaintProduction {
 				ord2 = transitionTime[orders.get(i+1).ID][99];
 			}else {
 				ord1 = transitionTime[orders.get(i).ID][orders.get(i+1).ID];
-				ord2 = transitionTime[orders.get(i+1).ID][orders.get(i).ID];
+				ord2 = transitionTime[orders.get(i+1).ID][orders.get(i).ID];					
 			}
 			
 			if(ord1 < ord2) {
@@ -130,9 +131,9 @@ public class PaintProduction {
 				machine[iom].add(orders.get(i+1));
 				machine[iom].add(orders.get(i));
 			}
-						
-			iom = findIdOfMinOperationTime(timeOfMachine);
+
 			timeOfMachine = calculateOT(machine, transitionTime);
+			iom = findIdOfMinOperationTime(timeOfMachine);
 		}
 		
 		System.out.println("\nGreedy:");
@@ -158,6 +159,7 @@ public class PaintProduction {
 					timeOfMachine[i] += 15 * 60;
 				}
 			}
+
 		}
 		
 		return timeOfMachine;
@@ -166,7 +168,7 @@ public class PaintProduction {
 	public static int findIdOfMinOperationTime(double[] timeOfMachine) {
 		double minTime = timeOfMachine[0];
 		int mid = 0;
-		for(int i = 1; i < timeOfMachine.length; i++ ) {
+		for(int i = 0; i < timeOfMachine.length; i++ ) {
 			if(timeOfMachine[i] < minTime) {
 				minTime = timeOfMachine[i];
 				mid = i;
