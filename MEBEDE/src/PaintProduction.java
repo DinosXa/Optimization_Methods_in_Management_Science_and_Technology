@@ -99,32 +99,30 @@ public class PaintProduction {
 			machine[i] = new ArrayList<Order>();
 			machineDemo[i] = new ArrayList<Order>();
 		}
+		
 		//add the first order to the first machine
 		machine[0].add(orders.get(0));
 		machineDemo[0].add(orders.get(0));
 		orders.get(0).setPicked(true);
 		
 		for (int i = 1; i < totOrders; i++)	{
-			for (int j = 0; j < 5; j++) {
-				machineDemo[j].add(orders.get(i));
-			}
 			
-			timeOfMachine = pp.findOperationTimeOfEachMachine(machineDemo, transitionTime);
+			timeOfMachine = pp.findOperationTimeOfEachMachine(machine, transitionTime);
 			minPos = findMinOperationTimePosition(timeOfMachine);
-			lastOrder = findLastOrderOfMachine(machineDemo[minPos]);
+			lastOrder = findLastOrderOfMachine(machine[minPos]);
 			nextBestOrder = findNextBestOrder(lastOrder, totOrders, orders, transitionTime);
 			machine[minPos].add(nextBestOrder);
-
-			timeOfMachine = pp.findOperationTimeOfEachMachine(machine, transitionTime);
-			for (int j = 0; j < 5; j++) {
-				machineDemo[j].remove(machineDemo[j].size() - 1);
-			}
 			
-			machineDemo[minPos].add(nextBestOrder);			
 		}
 		
 		timeOfMachine = pp.findOperationTimeOfEachMachine(machine, transitionTime);
-		System.out.println("Greedy Solution: " + pp.findMaxOperationTime(timeOfMachine));
+		System.out.println("Greedy Solution: " + pp.findMaxOperationTime(timeOfMachine) + "\n");
+		pp.printOrdersByMachine(machine);
+		System.out.println("\nMachine 1: " + timeOfMachine[0]);
+		System.out.println("Machine 2: " + timeOfMachine[1]);
+		System.out.println("Machine 3: " + timeOfMachine[2]);
+		System.out.println("Machine 4: " + timeOfMachine[3]);
+		System.out.println("Machine 5: " + timeOfMachine[4]);
 	}
 	
 	/*
@@ -213,6 +211,11 @@ public class PaintProduction {
 	 */
 	public Order findNextBestOrder(Order lastOrder, int totOrders, ArrayList<Order> orders, double[][] transitionTime) {
 		Order nextBestOrder = null;
+		
+		if(lastOrder == null) {
+			return findMinQuantityOrder(orders);
+		}
+		
 		int lastOrderID = lastOrder.getID();
 		
 		Order nextOrder;
@@ -251,6 +254,39 @@ public class PaintProduction {
 		newAddedtime += transitionTime[lastOrder.getID() - 1][nextOrder.getID() - 1];
 
 		return newAddedtime;
+	}
+	
+	/*
+	 * Find the min quantity of all available orders
+	 */
+	public static Order findMinQuantityOrder(ArrayList<Order> orders) {
+		Order order = null;
+		double minQ = 99999999;
+		double q;
+		
+		for (int i = 0; i < orders.size(); i++) {
+			q = orders.get(i).getQuantity();
+			if (orders.get(i).isPicked() == false && minQ > q) {
+				order = orders.get(i);
+				minQ = q;
+			}
+		}
+		return order;
+	}
+	
+	/*
+	 * Print the orders that exist in each machine
+	 */
+	public void printOrdersByMachine(ArrayList<Order>[] machine) {
+		int i = 1;
+		for(ArrayList<Order> ma : machine) {
+			System.out.print("Machine " + i + ": ");
+			for(Order or : ma) {
+				System.out.print(or.getID() + " ");
+			}
+			System.out.println();
+			i++;
+		}
 	}
 		
 }
