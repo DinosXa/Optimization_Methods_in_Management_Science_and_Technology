@@ -213,7 +213,9 @@ public class PaintProduction {
 		Order nextBestOrder = null;
 		
 		if(lastOrder == null) {
-			return findMinQuantityOrder(orders);
+			nextBestOrder = findFirstUnpickedOrder(orders);
+			nextBestOrder.setPicked(true);
+			return nextBestOrder;
 		}
 		
 		int lastOrderID = lastOrder.getID();
@@ -257,18 +259,16 @@ public class PaintProduction {
 	}
 	
 	/*
-	 * Find the min quantity of all available orders
+	 * Find the first order from the ArrayList orders that is not put into production
 	 */
-	public static Order findMinQuantityOrder(ArrayList<Order> orders) {
+	public static Order findFirstUnpickedOrder(ArrayList<Order> orders) {
 		Order order = null;
-		double minQ = 99999999;
-		double q;
 		
 		for (int i = 0; i < orders.size(); i++) {
-			q = orders.get(i).getQuantity();
-			if (orders.get(i).isPicked() == false && minQ > q) {
+
+			if (orders.get(i).isPicked() == false) {
 				order = orders.get(i);
-				minQ = q;
+				break;
 			}
 		}
 		return order;
