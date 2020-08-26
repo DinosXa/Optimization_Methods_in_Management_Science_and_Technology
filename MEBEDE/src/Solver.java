@@ -11,7 +11,7 @@ public class Solver {
 	Solution sol_simple;
 	Solution sol_greedy;
 	Solution sol_greedy_demo;
-	//Solution bestSolution = new Solution();
+	Solution bestSolution;
 	
 	int bday = 19092000;
 	Random ran = new Random(bday);
@@ -116,13 +116,15 @@ public class Solver {
 	
 	/*
 	 * Local Search
-	 
+	*/
 	void localSearch() {
+		bestSolution = new Solution();
+		
         CalculateTimeComponents();
-        //Instant start = Instant.now();
+        //Instant start = Instant.now();      
         bestSolution = cloneSolution(sol_greedy);
         reportSolution(sol_greedy);
-        SwapWarehousesMove swm = new SwapWarehousesMove();
+        SwapOrdersMove swm = new SwapOrdersMove();
         for (int i = 0; i < 500; i++)
         {
             FindBestSwapWarehousesMove(swm);
@@ -142,7 +144,7 @@ public class Solver {
         //long timeElapsed = Duration.between(start, finish).toMillis();
         
         int a = 0;
-	}*/
+	}
 	
 	/*
 	 * Calculates the time that each machine is working
@@ -307,28 +309,49 @@ public class Solver {
 		}
 	}
 	
-	/*private Solution cloneSolution(Solution sol) {
+	private Solution cloneSolution(Solution sol) {
         Solution cloned = new Solution();
-        for (int i = 0; i < sol.assignedOrders.length; i++) 
+        for (int i = 0; i < sol.assignedOrders.size(); i++) 
         {
-            cloned.assignedOrders[i] = sol.assignedOrders[i];
+            cloned.assignedOrders.add(sol.assignedOrders.get(i));
         }
         cloned.time = sol.time;
         return cloned;
     }
 	
-	 private void reportSolution(Solution sol) 
-	    {
-	        System.out.print(" -- Time:" + sol.time + "----");
-	        for (int i = 0 ; i < sol.assignedOrders.length; i++)
-	        {
-	            int pos = i+1;
-	            int wID = sol.assignedOrders[i].getID();
-	            System.out.print(wID + ",");
+	 private void reportSolution(Solution sol) {
+	    System.out.print(" -- Time:" + sol.time + "----");
+	    for (int i = 0 ; i < sol.assignedOrders.size(); i++) {
+	      	for(int j = 0 ; j < sol.assignedOrders.get(i).size(); j++) {
+	    	        //int pos = j+1;
+	    	        int oID = sol.assignedOrders.get(i).get(j).ID;
+	     	        System.out.print(oID + ",");
 	        }
-	        System.out.println();
-	        
-	    }*/
+	    }
+	    System.out.println();
+	}
+	 
+	private void FindBestSwapWarehousesMove(SwapOrdersMove swap) {
+	    Solution tentativeSolution = new Solution();
+	    swap.Initialize();
+	        for (int i = 0; i < sol_greedy.assignedOrders.size() - 1; i++) {
+	        	for (int j = 0; j < sol_greedy.assignedOrders.get(i).size(); j++) {
+	        		for (int k = i; k < sol_greedy.assignedOrders.size(); k++) {
+	        			for (int m = 0; m < sol_greedy.assignedOrders.get(k).size(); m++) {
+	        				double moveCost = CalculateSwapMoveCostFaster(i, j);
+		                    if (moveCost < swap.moveTime) {
+		                    	swap.moveTime = moveCost;
+		                    	swap.machineIndex1 = i;
+		                    	swap.machineIndex2 = j;
+		                    }
+		                    
+	        			}
+
+	        		}
+	                  
+	            }
+	        }
+	    }
 
 
 }
