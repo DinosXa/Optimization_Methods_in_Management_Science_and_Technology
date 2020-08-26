@@ -1,4 +1,3 @@
-
 public class Order {
 	
 	 boolean dark;
