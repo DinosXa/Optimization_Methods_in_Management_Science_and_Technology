@@ -1,3 +1,5 @@
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -6,8 +8,10 @@ public class Solver {
 	int totOrders = 100;
 	double[][] transitionTime = new double[totOrders][totOrders];
 	ArrayList<Order> orders;
-	Solution sol;
-	Solution bestSolution;
+	Solution sol_simple;
+	Solution sol_greedy;
+	Solution sol_greedy_demo;
+	//Solution bestSolution = new Solution();
 	
 	int bday = 19092000;
 	Random ran = new Random(bday);
@@ -38,13 +42,14 @@ public class Solver {
 		orders = new ArrayList<>();
 		
 		for (int i = 0 ; i < totOrders; i++){
-			int qq = 100 + ran.nextInt(401);
-			boolean drk = false; 
-		
+			Order o = new Order();
+			
+			o.quantity = 100 + ran.nextInt(401);
+			o.dark = false;
 			if (ran.nextDouble() < 0.15){
-				drk = true;
+				o.dark = true;
 			}
-			Order o = new Order(i + 1, qq , drk);
+			o.ID = i + 1; 
 			orders.add(o);
 		} 
 	}
@@ -53,25 +58,22 @@ public class Solver {
 	 * Simple Algorithm
 	 */
 	public void simpleAlgorithm() {
-		
-		ArrayList<Order>[] machine = new ArrayList[5];
-		
-		for (int i = 0; i < 5; i++){
-			machine[i] = new ArrayList<Order>();
-		
-		}
+				
+		sol_simple = new Solution();
 		
 		int k = 0;
 		for (int i=0; i < totOrders; i++) {
-			machine[k].add(orders.get(i));
+			sol_simple.assignedOrders.get(k).add(orders.get(i));
 			k++;
 			if(k==5) {
 				k = 0;
 			}
 		}
 		
-		double[] timeOfMachine = findOperationTimeOfEachMachine(machine, transitionTime);
+		double[] timeOfMachine = findOperationTimeOfEachMachine(sol_simple.assignedOrders, transitionTime);	
 		System.out.println("Simple Solution: " + findMaxOperationTime(timeOfMachine) +"\n");				
+		// sol.time = calculateTime();
+	
 	}
 	
 	/*
@@ -79,36 +81,32 @@ public class Solver {
 	 */
 	public void greedyAlgorithm() {
 		
-		ArrayList<Order>[] machine = new ArrayList[5];
-		ArrayList<Order>[] machineDemo = new ArrayList[5];
+		sol_greedy = new Solution();
+		sol_greedy_demo = new Solution();
+		
 		double[] timeOfMachine;
 		int minPos;
 		Order lastOrder;
 		Order nextBestOrder;
 		
-		for (int i = 0; i < 5; i++){
-			machine[i] = new ArrayList<Order>();
-			machineDemo[i] = new ArrayList<Order>();
-		}
-		
 		//add the first order to the first machine
-		machine[0].add(orders.get(0));
-		machineDemo[0].add(orders.get(0));
-		orders.get(0).setPicked(true);
+		sol_greedy.assignedOrders.get(0).add(orders.get(0));
+		sol_greedy_demo.assignedOrders.get(0).add(orders.get(0));
+		orders.get(0).isPicked = true;
 		
 		for (int i = 1; i < totOrders; i++)	{
 			
-			timeOfMachine = findOperationTimeOfEachMachine(machine, transitionTime);
+			timeOfMachine = findOperationTimeOfEachMachine(sol_greedy.assignedOrders, transitionTime);
 			minPos = findMinOperationTimePosition(timeOfMachine);
-			lastOrder = findLastOrderOfMachine(machine[minPos]);
+			lastOrder = findLastOrderOfMachine(sol_greedy.assignedOrders.get(minPos));
 			nextBestOrder = findNextBestOrder(lastOrder, totOrders, orders, transitionTime);
-			machine[minPos].add(nextBestOrder);
+			sol_greedy.assignedOrders.get(minPos).add(nextBestOrder);
 			
 		}
 		
-		timeOfMachine = pp.findOperationTimeOfEachMachine(machine, transitionTime);
-		System.out.println("Greedy Solution: " + pp.findMaxOperationTime(timeOfMachine) + "\n");
-		pp.printOrdersByMachine(machine);
+		timeOfMachine = findOperationTimeOfEachMachine(sol_greedy.assignedOrders, transitionTime);
+		System.out.println("Greedy Solution: " + findMaxOperationTime(timeOfMachine) + "\n");
+		printOrdersByMachine(sol_greedy.assignedOrders);
 		System.out.println("\nMachine 1: " + timeOfMachine[0]);
 		System.out.println("Machine 2: " + timeOfMachine[1]);
 		System.out.println("Machine 3: " + timeOfMachine[2]);
@@ -116,14 +114,40 @@ public class Solver {
 		System.out.println("Machine 5: " + timeOfMachine[4]);
 	}
 	
-	
-	
-	
+	/*
+	 * Local Search
+	 
+	void localSearch() {
+        CalculateTimeComponents();
+        //Instant start = Instant.now();
+        bestSolution = cloneSolution(sol_greedy);
+        reportSolution(sol_greedy);
+        SwapWarehousesMove swm = new SwapWarehousesMove();
+        for (int i = 0; i < 500; i++)
+        {
+            FindBestSwapWarehousesMove(swm);
+            if (swm.moveCost >= 0)
+            {
+                break;
+            }
+            
+            ApplyMove(swm);
+            StoreBestSolution();
+            System.out.print(i + " " + sol.cost + " " + bestSolution.cost);
+            ReportSolution(sol);
+            System.out.println();
+        }
+        
+        //Instant finish = Instant.now();
+        //long timeElapsed = Duration.between(start, finish).toMillis();
+        
+        int a = 0;
+	}*/
 	
 	/*
 	 * Calculates the time that each machine is working
 	 */
-	public double[] findOperationTimeOfEachMachine(ArrayList<Order>[] machine, double[][] transitionTime) {
+	public double[] findOperationTimeOfEachMachine(ArrayList<ArrayList<Order>> machine, double[][] transitionTime) {
 		double[] timeOfMachine = new double[5];
 		
 		for(int i=0; i<5; i++) {
@@ -132,22 +156,22 @@ public class Solver {
 		
 		for (int i=0; i < 5; i++) {
 			
-			if(machine[i].size() == 1) {
-				timeOfMachine[i] = timeOfMachine[i] + machine[i].get(0).quantity * 6;
+			if(machine.get(i).size() == 1) {
+				timeOfMachine[i] = timeOfMachine[i] + machine.get(i).get(0).quantity * 6;
 			} else {
 			
-				for (int j=0; j < machine[i].size() - 1; j++) {
-					timeOfMachine[i] = timeOfMachine[i] + machine[i].get(j).quantity * 6 
-							+ transitionTime[machine[i].get(j).ID - 1][machine[i].get(j + 1).ID - 1];
+				for (int j=0; j < machine.get(i).size() - 1; j++) {
+					timeOfMachine[i] = timeOfMachine[i] + machine.get(i).get(j).quantity * 6 
+							+ transitionTime[machine.get(i).get(j).ID - 1][machine.get(i).get(j + 1).ID - 1];
 	
 					//adds extra 15 minutes if the next color is different than the current
-					if(machine[i].get(j).dark != machine[i].get(j + 1).dark) {
+					if(machine.get(i).get(j).dark != machine.get(i).get(j + 1).dark) {
 						timeOfMachine[i] += 15 * 60;
 					}
 				}
 				
-				if(machine[i].size() > 1) {
-					timeOfMachine[i] = timeOfMachine[i] + machine[i].get(machine[i].size() - 1).quantity * 6; //adds the time of the last order of current machine.
+				if(machine.get(i).size() > 1) {
+					timeOfMachine[i] = timeOfMachine[i] + machine.get(i).get(machine.get(i).size() - 1).quantity * 6; //adds the time of the last order of current machine.
 				}
 			}
 		}
@@ -208,11 +232,11 @@ public class Solver {
 		
 		if(lastOrder == null) {
 			nextBestOrder = findFirstUnpickedOrder(orders);
-			nextBestOrder.setPicked(true);
+			nextBestOrder.isPicked = true;
 			return nextBestOrder;
 		}
 		
-		int lastOrderID = lastOrder.getID();
+		int lastOrderID = lastOrder.ID;
 		
 		Order nextOrder;
 		int nextOrderID;
@@ -221,16 +245,16 @@ public class Solver {
 		
 		for (int i = 0; i < totOrders; i++) {
 			nextOrder = orders.get(i);
-			nextOrderID = nextOrder.getID();
+			nextOrderID = nextOrder.ID;
 			newAddedTime = findNewAddedTime(lastOrder, nextOrder, transitionTime);
 			
-			if(lastOrderID != nextOrderID && addedTime > newAddedTime && !nextOrder.isPicked()) {
+			if(lastOrderID != nextOrderID && addedTime > newAddedTime && !nextOrder.isPicked) {
 				nextBestOrder = nextOrder;
 				addedTime = newAddedTime;
 			}
 			
 		}
-		nextBestOrder.setPicked(true);
+		nextBestOrder.isPicked = true;
 		
 		return nextBestOrder;
 	}
@@ -243,11 +267,11 @@ public class Solver {
 	public double findNewAddedTime(Order lastOrder, Order nextOrder, double[][] transitionTime) {
 		double newAddedtime = 0;
 		
-		if(lastOrder.isDark() != nextOrder.isDark()) {
+		if(lastOrder.dark != nextOrder.dark) {
 			newAddedtime += 15 * 60;
 		}
 		
-		newAddedtime += transitionTime[lastOrder.getID() - 1][nextOrder.getID() - 1];
+		newAddedtime += transitionTime[lastOrder.ID - 1][nextOrder.ID - 1];
 
 		return newAddedtime;
 	}
@@ -260,7 +284,7 @@ public class Solver {
 		
 		for (int i = 0; i < orders.size(); i++) {
 
-			if (orders.get(i).isPicked() == false) {
+			if (orders.get(i).isPicked == false) {
 				order = orders.get(i);
 				break;
 			}
@@ -268,8 +292,43 @@ public class Solver {
 		return order;
 	}
 	
+	/*
+	 * Print the orders that exist in each machine
+	 */
+	public void printOrdersByMachine(ArrayList<ArrayList<Order>> machine) {
+		int i = 1;
+		for(ArrayList<Order> ma : machine) {
+			System.out.print("Machine " + i + ": ");
+			for(Order or : ma) {
+				System.out.print(or.ID + " ");
+			}
+			System.out.println();
+			i++;
+		}
+	}
 	
+	/*private Solution cloneSolution(Solution sol) {
+        Solution cloned = new Solution();
+        for (int i = 0; i < sol.assignedOrders.length; i++) 
+        {
+            cloned.assignedOrders[i] = sol.assignedOrders[i];
+        }
+        cloned.time = sol.time;
+        return cloned;
+    }
 	
-	
+	 private void reportSolution(Solution sol) 
+	    {
+	        System.out.print(" -- Time:" + sol.time + "----");
+	        for (int i = 0 ; i < sol.assignedOrders.length; i++)
+	        {
+	            int pos = i+1;
+	            int wID = sol.assignedOrders[i].getID();
+	            System.out.print(wID + ",");
+	        }
+	        System.out.println();
+	        
+	    }*/
+
 
 }
