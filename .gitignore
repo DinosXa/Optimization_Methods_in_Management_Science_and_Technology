@@ -1,1 +1,12 @@
 /.metadata/
+
+# Java class files
+*.class
+
+# generated files
+bin/
+
+# Eclipse files
+.project
+.classpath
+.settings/
