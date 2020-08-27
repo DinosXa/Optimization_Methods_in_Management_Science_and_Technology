@@ -5,8 +5,3 @@
 
 # generated files
 bin/
-
-# Eclipse files
-.project
-.classpath
-.settings/
