@@ -4,13 +4,17 @@ public class Assignment {
 		
 		Solver s = new Solver();
 		
+		// Generates Problem's Input
 		s.generateAssignmentInput();
 		
+		// Simple Algorithm
 		s.simpleAlgorithm();
 		
+		// Greedy Algorithm
 		s.greedyAlgorithm();
 		
-		//s.localSearch();
+		// Local Search Algorithm
+		s.localSearch();
 	}
 
 }

@@ -10,7 +10,6 @@ public class Solver {
 	ArrayList<Order> orders;
 	Solution sol_simple;
 	Solution sol_greedy;
-	Solution sol_greedy_demo;
 	Solution bestSolution;
 	
 	int bday = 19092000;
@@ -70,9 +69,9 @@ public class Solver {
 			}
 		}
 		
-		double[] timeOfMachine = findOperationTimeOfEachMachine(sol_simple.assignedOrders, transitionTime);	
-		System.out.println("Simple Solution: " + findMaxOperationTime(timeOfMachine) +"\n");				
-		// sol.time = calculateTime();
+		double[] timeOfMachine = findOperationTimeOfEachMachine(sol_simple.assignedOrders, transitionTime);
+		sol_simple.time = findMaxOperationTime(timeOfMachine);
+		System.out.println("Simple Solution: " + sol_simple.time +"\n");				
 	
 	}
 	
@@ -81,9 +80,7 @@ public class Solver {
 	 */
 	public void greedyAlgorithm() {
 		
-		sol_greedy = new Solution();
-		sol_greedy_demo = new Solution();
-		
+		sol_greedy = new Solution();		
 		double[] timeOfMachine;
 		int minPos;
 		Order lastOrder;
@@ -91,7 +88,6 @@ public class Solver {
 		
 		//add the first order to the first machine
 		sol_greedy.assignedOrders.get(0).add(orders.get(0));
-		sol_greedy_demo.assignedOrders.get(0).add(orders.get(0));
 		orders.get(0).isPicked = true;
 		
 		for (int i = 1; i < totOrders; i++)	{
@@ -105,7 +101,8 @@ public class Solver {
 		}
 		
 		timeOfMachine = findOperationTimeOfEachMachine(sol_greedy.assignedOrders, transitionTime);
-		System.out.println("Greedy Solution: " + findMaxOperationTime(timeOfMachine) + "\n");
+		sol_greedy.time = findMaxOperationTime(timeOfMachine);
+		System.out.println("Greedy Solution: " + sol_greedy.time + "\n");
 		printOrdersByMachine(sol_greedy.assignedOrders);
 		System.out.println("\nMachine 1: " + timeOfMachine[0]);
 		System.out.println("Machine 2: " + timeOfMachine[1]);
@@ -120,24 +117,30 @@ public class Solver {
 	void localSearch() {
 		bestSolution = new Solution();
 		
-        CalculateTimeComponents();
         //Instant start = Instant.now();      
         bestSolution = cloneSolution(sol_greedy);
-        reportSolution(sol_greedy);
-        SwapOrdersMove swm = new SwapOrdersMove();
+        SwapOrdersMove swap = new SwapOrdersMove();
         for (int i = 0; i < 500; i++)
         {
-            FindBestSwapWarehousesMove(swm);
-            if (swm.moveCost >= 0)
+            FindBestSwapOrdersMove(swap, orders, transitionTime);
+            if (swap.moveTime >= 0)
             {
                 break;
             }
             
-            ApplyMove(swm);
-            StoreBestSolution();
-            System.out.print(i + " " + sol.cost + " " + bestSolution.cost);
-            ReportSolution(sol);
-            System.out.println();
+            applyMove(swap);
+            storeBestSolution();
+    		
+            double[] timeOfMachine = findOperationTimeOfEachMachine(sol_greedy.assignedOrders, transitionTime);
+    		sol_greedy.time = findMaxOperationTime(timeOfMachine);
+    		System.out.println("khjgfd");
+    		System.out.println("Local Search Solution: " + sol_greedy.time + "\n");
+    		printOrdersByMachine(sol_greedy.assignedOrders);
+    		System.out.println("\nMachine 1: " + timeOfMachine[0]);
+    		System.out.println("Machine 2: " + timeOfMachine[1]);
+    		System.out.println("Machine 3: " + timeOfMachine[2]);
+    		System.out.println("Machine 4: " + timeOfMachine[3]);
+    		System.out.println("Machine 5: " + timeOfMachine[4]);
         }
         
         //Instant finish = Instant.now();
@@ -318,40 +321,107 @@ public class Solver {
         cloned.time = sol.time;
         return cloned;
     }
-	
-	 private void reportSolution(Solution sol) {
-	    System.out.print(" -- Time:" + sol.time + "----");
-	    for (int i = 0 ; i < sol.assignedOrders.size(); i++) {
-	      	for(int j = 0 ; j < sol.assignedOrders.get(i).size(); j++) {
-	    	        //int pos = j+1;
-	    	        int oID = sol.assignedOrders.get(i).get(j).ID;
-	     	        System.out.print(oID + ",");
-	        }
-	    }
-	    System.out.println();
-	}
 	 
-	private void FindBestSwapWarehousesMove(SwapOrdersMove swap) {
-	    Solution tentativeSolution = new Solution();
+	private void FindBestSwapOrdersMove(SwapOrdersMove swap, ArrayList<Order> orders, double[][] transitionTime) {
 	    swap.Initialize();
-	        for (int i = 0; i < sol_greedy.assignedOrders.size() - 1; i++) {
-	        	for (int j = 0; j < sol_greedy.assignedOrders.get(i).size(); j++) {
-	        		for (int k = i; k < sol_greedy.assignedOrders.size(); k++) {
-	        			for (int m = 0; m < sol_greedy.assignedOrders.get(k).size(); m++) {
-	        				double moveCost = CalculateSwapMoveCostFaster(i, j);
-		                    if (moveCost < swap.moveTime) {
-		                    	swap.moveTime = moveCost;
-		                    	swap.machineIndex1 = i;
-		                    	swap.machineIndex2 = j;
-		                    }
-		                    
-	        			}
+	    swap.moveTime = sol_greedy.time;
+	    int k;
+	    int l;
+	    boolean flag = false;
+	    for (int i = 0; i < sol_greedy.assignedOrders.size(); i++) {
+	        for (int j = 0; j < sol_greedy.assignedOrders.get(i).size(); j++) {
+	        	if (j == sol_greedy.assignedOrders.get(i).size() - 1) {
+	        		k = 0;
+	        		l = i + 1;
+	        	} else {
+	        		k = j + 1;
+	        		l = i;
+	        	}
+	        	while (!(l == sol_greedy.assignedOrders.size() - 1 && k == sol_greedy.assignedOrders.get(l).size()) && !flag && !(l == sol_greedy.assignedOrders.size() - 1 && j == sol_greedy.assignedOrders.get(i).size() - 1)) {
+	        		double[] timeOfMachine = findOperationTimeOfEachMachine(sol_simple.assignedOrders, transitionTime);
+	        		timeOfMachine[i] = findTimeNeeded(i, j, transitionTime, sol_greedy.assignedOrders.get(l).get(k)) - findTimeNeeded(i, j, transitionTime, sol_greedy.assignedOrders.get(i).get(j));
+	        		timeOfMachine[l] = findTimeNeeded(l, k, transitionTime, sol_greedy.assignedOrders.get(i).get(j)) - findTimeNeeded(l, k, transitionTime, sol_greedy.assignedOrders.get(l).get(k));
+	        		
+	        		double moveTime = findMaxOperationTime(timeOfMachine);
+	        		
+    				if (moveTime < swap.moveTime) {
+                    	swap.moveTime = moveTime;
+                    	swap.flag = true;
+                    	swap.machineIndex1[0] = i;
+                    	swap.machineIndex1[1] = j;
+                    	swap.machineIndex2[0] = l;
+                    	swap.machineIndex2[1] = k;
 
+                    }
+	        		
+	        		if (k == sol_greedy.assignedOrders.get(i).size() - 1 && l != sol_greedy.assignedOrders.size() - 1) {
+	        			k = 0;
+	        			l = i + 1;	
+	        		} else {
+	        			k = k + 1;
 	        		}
-	                  
-	            }
+	        		
+	        		if (l == sol_greedy.assignedOrders.size() - 1 && j == sol_greedy.assignedOrders.get(l).size() - 2) {
+	        			flag = true;
+	        		}
+	        	}              
 	        }
 	    }
+	}
 
+	public double findTimeNeeded(int i, int j, double[][] transitionTime, Order ord ) {
+		double neededTime = 0;
+		
+		if (j == 0) {
+			if(ord.dark != sol_greedy.assignedOrders.get(i).get(j+1).dark) {
+				neededTime += 15 * 60;
+			}
+			
+			neededTime += transitionTime[ord.ID - 1][sol_greedy.assignedOrders.get(i).get(j+1).ID - 1];
+
+		} else if (j == sol_greedy.assignedOrders.get(i).size() - 1) {
+			
+			if(ord.dark != sol_greedy.assignedOrders.get(i).get(j-1).dark) {
+				neededTime += 15 * 60;
+			}
+			neededTime += transitionTime[sol_greedy.assignedOrders.get(i).get(j-1).ID - 1][ord.ID - 1];
+
+		} else {
+			if(ord.dark != sol_greedy.assignedOrders.get(i).get(j+1).dark) {
+				neededTime += 15 * 60;
+			}
+			if(ord.dark != sol_greedy.assignedOrders.get(i).get(j-1).dark) {
+				neededTime += 15 * 60;
+			}
+			neededTime += transitionTime[ord.ID - 1][sol_greedy.assignedOrders.get(i).get(j+1).ID - 1];
+			neededTime += transitionTime[sol_greedy.assignedOrders.get(i).get(j-1).ID - 1][ord.ID - 1];
+
+		}
+		neededTime += ord.quantity * 6;
+
+		return neededTime;
+	}
+	
+    private void applyMove(SwapOrdersMove swap) {
+        if (swap.flag)
+        {
+            Order s1 = sol_greedy.assignedOrders.get(swap.machineIndex1[0]).get(swap.machineIndex1[1]);
+            Order s2 = sol_greedy.assignedOrders.get(swap.machineIndex2[0]).get(swap.machineIndex2[1]);            
+            
+            sol_greedy.assignedOrders.get(swap.machineIndex1[0]).set(swap.machineIndex1[1], s2);
+            sol_greedy.assignedOrders.get(swap.machineIndex2[0]).set(swap.machineIndex2[1], s1);
+                        
+            double[] timeOfMachine = findOperationTimeOfEachMachine(sol_simple.assignedOrders, transitionTime);
+    		sol_greedy.time = findMaxOperationTime(timeOfMachine);
+            
+        }
+    }
+    
+    private void storeBestSolution() {
+        if (sol_greedy.time < bestSolution.time)
+        {
+            bestSolution = cloneSolution(sol_greedy);
+        }
+    }
 
 }

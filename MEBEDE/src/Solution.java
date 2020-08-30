@@ -4,7 +4,6 @@ public class Solution {
 	
 	ArrayList<ArrayList<Order>> assignedOrders;
 	public double time;
-	ArrayList<Order> mnb;
 		
 	public Solution () {	
 		assignedOrders = new ArrayList();
