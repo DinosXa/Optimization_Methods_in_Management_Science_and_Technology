@@ -4,7 +4,7 @@ public class Assignment {
 		
 		Solver s = new Solver();
 		
-		// Generates Problem's Input
+		// Generates Problem's Inputs
 		s.generateAssignmentInput();
 		
 		// Simple Algorithm
