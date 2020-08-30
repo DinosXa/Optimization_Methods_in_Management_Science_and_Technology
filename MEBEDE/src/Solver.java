@@ -118,13 +118,11 @@ public class Solver {
 	*/
 	void localSearch() {
 		sol_local = new Solution();
-
         sol_local = sol_greedy;
         SwapOrdersMove swap = new SwapOrdersMove();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 1; i++) {
             FindBestSwapOrdersMove(swap, orders, transitionTime);
-            if (swap.moveTime >= 0)
-            {
+            if (swap.moveTime >= 0) {
                 break;
             }
 
@@ -132,7 +130,7 @@ public class Solver {
 
             double[] timeOfMachine = findOperationTimeOfEachMachine(sol_local.assignedOrders, transitionTime);
     		sol_local.time = findMaxOperationTime(timeOfMachine);
-    		System.out.println("Local Search Solution: " + sol_local.time + "\n");
+    		System.out.println("\nLocal Search Solution: " + sol_local.time + "\n");
     		printOrdersByMachine(sol_local.assignedOrders);
     		System.out.println("\nMachine 1: " + timeOfMachine[0]);
     		System.out.println("Machine 2: " + timeOfMachine[1]);
@@ -323,6 +321,7 @@ public class Solver {
 	        		l = n;
 	        	}
 	        	while (!flag1 && !flag2 && !(n == sol_local.assignedOrders.size() - 1 && j == sol_local.assignedOrders.get(n).size() - 1)) {
+	        		
 	        		double[] timeOfMachine = findOperationTimeOfEachMachine(sol_local.assignedOrders, transitionTime);
 	        		timeOfMachine[n] += findTimeNeeded(n, j, transitionTime, sol_local.assignedOrders.get(l).get(k)) - findTimeNeeded(n, j, transitionTime, sol_local.assignedOrders.get(n).get(j));
 	        		timeOfMachine[l] += findTimeNeeded(l, k, transitionTime, sol_local.assignedOrders.get(n).get(j)) - findTimeNeeded(l, k, transitionTime, sol_local.assignedOrders.get(l).get(k));
@@ -341,7 +340,7 @@ public class Solver {
 
 	        		if (k == sol_local.assignedOrders.get(n).size() - 1 && l != sol_local.assignedOrders.size() - 1) {
 	        			k = 0;
-	        			l = n + 1;
+	        			l = l + 1;
 	        		} else {
 	        			k = k + 1;
 	        		}
