@@ -7,7 +7,7 @@ public class Solution {
 		
 	public Solution () {	
 		assignedOrders = new ArrayList();
-		for (int i = 0; i < 5; i++){
+		for (int m = 0; m < 5; m++){
 			assignedOrders.add(new ArrayList());
 		}
 	}
