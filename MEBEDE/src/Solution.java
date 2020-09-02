@@ -6,9 +6,9 @@ public class Solution {
 	public double time;
 		
 	public Solution () {	
-		assignedOrders = new ArrayList();
+		assignedOrders = new ArrayList<ArrayList<Order>>();
 		for (int m = 0; m < 5; m++){
-			assignedOrders.add(new ArrayList());
+			assignedOrders.add(new ArrayList<Order>());
 		}
 	}
 	

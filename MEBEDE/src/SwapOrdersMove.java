@@ -10,13 +10,13 @@ public class SwapOrdersMove {
 
 	    }
 
-	    public void Initialize()
+	    public void Initialize(double time)
 	    {
 	        machineIndex1[0] = -1;
 	        machineIndex1[1] = -1;
 	        machineIndex2[0] = -1;
 	        machineIndex2[1] = -1;
-	        moveTime = Double.MAX_VALUE;
+	        moveTime = time;
 	        flag = false;
 	    }
 
