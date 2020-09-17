@@ -15,6 +15,8 @@ public class Assignment {
 		
 		// Local Search Algorithm
 		s.localSearch();
+		
+		s.vnd();
 	}
 
 }

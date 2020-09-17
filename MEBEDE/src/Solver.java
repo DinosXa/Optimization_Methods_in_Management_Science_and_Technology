@@ -472,5 +472,10 @@ public class Solver {
 
         }
     }
+	
+	public void vnd() {
+		VND vnd = new VND(sol_greedy);
+		vnd.executeVND();
+	}
 
 }
