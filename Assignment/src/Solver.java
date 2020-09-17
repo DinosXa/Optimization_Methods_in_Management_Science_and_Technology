@@ -113,13 +113,16 @@ public class Solver {
 		sol_local = sol_greedy;
 		
         SwapOrdersMove swap = new SwapOrdersMove();
-        // repeating the algorithm 3 times
-        for (int i = 0; i < 3; i++) {
-            FindBestSwapOrdersMove(swap, orders, transitionTime);
+        swap.Initialize();
+        // repeating the algorithm 500 times
+        for (int i = 0; i < 1; i++) {
+            findBestMove(swap, orders, transitionTime);
             if (swap.moveTime - sol_local.time >= 0) {
+            	System.out.println("\nThe solution can not be improved any further.");
             	break;
             }
-            applyMove(swap);
+            
+           	applyMove(swap);
             
             double[] timeOfMachine = findOperationTimeOfEachMachine(sol_local.assignedOrders, transitionTime);
             sol_local.time = findMaxOperationTime(timeOfMachine);
@@ -229,8 +232,6 @@ public class Solver {
 
 		return pos;
 	}
-	
-	
 
 	/*
 	 * Finds the last order of a specific machine
@@ -327,100 +328,54 @@ public class Solver {
 	}
 
 	/*
-	 * Finds the positions of the orders whose swap will lead to a decrease of the overall operation time
+	 * Finds the best move to be made
 	 */
-	private void FindBestSwapOrdersMove(SwapOrdersMove swap, ArrayList<Order> orders, double[][] transitionTime) {
-	    swap.Initialize();
-	    int l;
-	    int k;
-	    boolean flag1 = false;
-	    boolean flag2 = false;
-	    for (int i = 0; i < sol_local.assignedOrders.size(); i++) {
-	    	for (int j = 0; j < sol_local.assignedOrders.get(i).size(); j++) {
-	    		if (j == sol_local.assignedOrders.get(i).size() - 1) {
-	        		l = i + 1;
-	        		k = 0;
-	        	} else {
-	        		l = i;
-	        		k = j + 1;
-	        	}
-	        	while (!flag1 && !flag2 && !(i == sol_local.assignedOrders.size() - 1 && j == sol_local.assignedOrders.get(i).size() - 1)) {
-	        		
-	        		double[] timeOfMachine = findOperationTimeOfEachMachine(sol_local.assignedOrders, transitionTime);
-	        		timeOfMachine[i] += findTimeNeeded(i, j, transitionTime, sol_local.assignedOrders.get(l).get(k)) 
-	        				- findTimeNeeded(i, j, transitionTime, sol_local.assignedOrders.get(i).get(j));
-	        		timeOfMachine[l] += findTimeNeeded(l, k, transitionTime, sol_local.assignedOrders.get(i).get(j)) 
-	        				- findTimeNeeded(l, k, transitionTime, sol_local.assignedOrders.get(l).get(k));
-
-	        		double moveTime = findMaxOperationTime(timeOfMachine);
-    				if (moveTime < swap.moveTime) {
-                    	swap.moveTime = moveTime;
-                    	swap.flag = true;
-                    	swap.machineIndex1[0] = i;
-                    	swap.machineIndex1[1] = j;
-                    	swap.machineIndex2[0] = l;
-                    	swap.machineIndex2[1] = k;
-                    }
-
-	        		if (k == sol_local.assignedOrders.get(i).size() - 1 && l != sol_local.assignedOrders.size() - 1) {
-	        			l++;
-	        			k = 0;
-	        		} else {
-	        			k++;
-	        		}
-
-	        		// checking if we have compared our order with all the following ones
-	        		if (l == sol_local.assignedOrders.size() - 1 && k == sol_local.assignedOrders.get(l).size()) {
-	        			flag1 = true;
-	        		}
-	        		// checking if we have reached the pen-ultimate order
-	        		if (i == sol_local.assignedOrders.size() - 1 && j == sol_local.assignedOrders.get(l).size() - 2) {
-	        			flag2 = true;
-	        		}
-	        	}
-	    	}
-	    }
-	}
-	
-	public void findBestMove (SwapOrdersMove swap, ArrayList<Order> orders, double[][] transitionTime) {
+	public void findBestMove(SwapOrdersMove swap, ArrayList<Order> orders, double[][] transitionTime) {
 		double[] timeOfMachine = findOperationTimeOfEachMachine(sol_local.assignedOrders, transitionTime);
 		
+		int[] machineIndex1 = new int[2];
+	    int[] machineIndex2 = new int[2];
 		int k = findMinOperationTimePosition(timeOfMachine);
-		for (int m = 0; m < sol_local.assignedOrders.get(findMaxOperationTimePosition(timeOfMachine)).size(); m++) {
-			swap.machineIndex1[0] = findMaxOperationTimePosition(timeOfMachine);
-			swap.machineIndex1[1] = m;
+		machineIndex1[0] = k;
+		for (int m = 0; m < sol_local.assignedOrders.get(k).size(); m++) {
+			machineIndex1[1] = m;
 			// checking if the last order within the machine with the maximum time is of the same darkness as the last order within the machine with the minimum time
-			if (sol_local.assignedOrders.get(swap.machineIndex1[0]).get(swap.machineIndex1[1]).dark == 
+			if (sol_local.assignedOrders.get(machineIndex1[0]).get(machineIndex1[1]).dark == 
 					(sol_local.assignedOrders.get(k).get(sol_local.assignedOrders.get(k).size()-1)).dark) {
-				swap.machineIndex2[0] = k;
-				swap.machineIndex2[1] = sol_local.assignedOrders.get(k).size()-1;
+				machineIndex2[0] = k;
+				machineIndex2[1] = sol_local.assignedOrders.get(k).size()-1;
 				// finding the machine with the minimum operation time among those that have an order of the same darkness assigned to their last position	
 			} else {
 				double pickedMachineTime = findMaxOperationTime(timeOfMachine);
 				int pos = k;
 				for (int i = 0; i < sol_local.assignedOrders.size(); i++) {
-					if (i != swap.machineIndex1[0] && i != k) {
-						if (sol_local.assignedOrders.get(swap.machineIndex1[0]).get(swap.machineIndex1[1]).dark == 
+					if (i != machineIndex1[0] && i != k) {
+						if (sol_local.assignedOrders.get(machineIndex1[0]).get(machineIndex1[1]).dark == 
 								(sol_local.assignedOrders.get(i).get(sol_local.assignedOrders.get(i).size()-1)).dark && 
 								timeOfMachine[i] < pickedMachineTime) {
-							swap.machineIndex2[0] = k;
-							swap.machineIndex2[1] = sol_local.assignedOrders.get(k).size()-1;
+							machineIndex2[0] = k;
+							machineIndex2[1] = sol_local.assignedOrders.get(k).size()-1;
 							pickedMachineTime = timeOfMachine[i];
 							pos = i;
 						}
 					}
 				}
-				swap.machineIndex2[0] = pos;
-				swap.machineIndex2[1] = sol_local.assignedOrders.get(pos).size()-1;
+				machineIndex2[0] = pos;
+				machineIndex2[1] = sol_local.assignedOrders.get(pos).size()-1;
 			}
+			
+    		timeOfMachine[machineIndex1[0]] -= findTimeNeeded(machineIndex1[0], machineIndex1[1], transitionTime, sol_local.assignedOrders.get(machineIndex1[0]).get(machineIndex1[0]));
+    		timeOfMachine[machineIndex2[0]] += findTimeNeeded(machineIndex2[0], machineIndex2[1], transitionTime, sol_local.assignedOrders.get(machineIndex1[0]).get(machineIndex1[0]));
+
 			double moveTime = findMaxOperationTime(timeOfMachine);
 			if (moveTime < swap.moveTime) {
 				swap.moveTime = moveTime;
-				swap.flag = true;
-				swap.machineIndex1[0] = findMaxOperationTimePosition(timeOfMachine);
-				swap.machineIndex1[1] = m;
+				swap.machineIndex1[0] = machineIndex1[0];
+				swap.machineIndex1[1] = machineIndex2[1];
+				swap.machineIndex2[0] = machineIndex2[0];
+				swap.machineIndex2[1] = machineIndex2[1];
 			}
-		} 
+		}
 		
 	}
 
@@ -459,18 +414,15 @@ public class Solver {
 	 * Swaps the orders found at FindBestSwapOrdersMove
 	 */
 	private void applyMove(SwapOrdersMove swap) {
-        if (swap.flag)
-        {
-            Order s1 = sol_local.assignedOrders.get(swap.machineIndex1[0]).get(swap.machineIndex1[1]);
-            Order s2 = sol_local.assignedOrders.get(swap.machineIndex2[0]).get(swap.machineIndex2[1]);
 
-            sol_local.assignedOrders.get(swap.machineIndex1[0]).set(swap.machineIndex1[1], s2);
-            sol_local.assignedOrders.get(swap.machineIndex2[0]).set(swap.machineIndex2[1], s1);
+        	Order s = sol_local.assignedOrders.get(swap.machineIndex1[0]).get(swap.machineIndex1[1]);
+        	
+        	sol_local.assignedOrders.get(swap.machineIndex1[0]).remove(swap.machineIndex1[1]);
+        	sol_local.assignedOrders.get(swap.machineIndex2[0]).add(swap.machineIndex2[1], s);
 
             double[] timeOfMachine = findOperationTimeOfEachMachine(sol_simple.assignedOrders, transitionTime);
     		sol_local.time = findMaxOperationTime(timeOfMachine);
-
-        }
+    		
     }
 
 }

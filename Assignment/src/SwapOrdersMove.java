@@ -3,8 +3,6 @@ public class SwapOrdersMove {
 	int[] machineIndex1 = new int[2];
     int[] machineIndex2 = new int[2];
     double moveTime;
-    // Checks if there is a swap to be made
-    boolean flag;
 
     public SwapOrdersMove() {
 
@@ -17,7 +15,6 @@ public class SwapOrdersMove {
         machineIndex2[0] = -1;
         machineIndex2[1] = -1;
         moveTime = Double.MAX_VALUE;
-        flag = false;
     }
 
 }
