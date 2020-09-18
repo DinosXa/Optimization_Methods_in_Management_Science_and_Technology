@@ -16,6 +16,7 @@ public class Assignment {
 		// Local Search Algorithm
 		s.localSearch();
 		
+		// Variable Neighborhood Descent
 		s.vnd();
 	}
 	

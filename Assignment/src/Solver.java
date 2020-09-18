@@ -135,7 +135,39 @@ public class Solver {
             }
 		}
 	}
+	
+	/*
+	 * Variable Neighborhood Descent
+	 */
+	public void vnd() {
+		System.out.println("\n\nSTARTING VND\n");
+		
+		ArrayList<ArrayList<Order>> newAssignedOrders;
+		sol_local_vnd = sol_greedy;
+		double newTime;
+		
+		int k = 0;
+		while(k < 3) {
+			newAssignedOrders = findBestNeighbour(k);
+			double[] timeOfMachine = findOperationTimeOfEachMachine(newAssignedOrders, transitionTime);
+			newTime = findMaxOperationTime(timeOfMachine);
+						
+			if (newTime < sol_local_vnd.time) {
+				sol_local_vnd.time = newTime;
+				sol_local_vnd.assignedOrders = newAssignedOrders;
+				k = 0;
+			} else {
+				k++;
+			}
+		}
+		
+		System.out.println("\nBest VND Time: " + sol_local_vnd.time);
+		printOrdersByMachine(sol_local_vnd.assignedOrders);
+		
+		areSame(sol_local_vnd.assignedOrders); //Check if array has duplicated orders
 
+	}
+	
 	/*
 	 * Calculates the time that each machine is operating
 	 */
@@ -410,9 +442,8 @@ public class Solver {
 	}
 
 	/*
-	 * Swaps the orders found at FindBestSwapOrdersMove
+	 * Swaps the orders found at FindBestMove
 	 */
-
 	private void applyMove(RepositioningOrderMove repositioning) {
 
 		Order s = sol_local.assignedOrders.get(repositioning.machineIndex1[0]).get(repositioning.machineIndex1[1]);
@@ -425,79 +456,231 @@ public class Solver {
     	
     }
 	
-	public void vnd() {
-		System.out.println("\n\nSTARTING VND\n");
-		VND vnd = new VND(sol_greedy, transitionTime);
-		ArrayList<ArrayList<Order>> newAssignedOrders;
-		sol_local_vnd = sol_greedy;
-		double newTime;
-		int k = 0;
-		
-		while(k < 3) {
-			newAssignedOrders = findBestNeighbour(k);
-			double[] timeOfMachine = findOperationTimeOfEachMachine(newAssignedOrders, transitionTime);
-			newTime = findMaxOperationTime(timeOfMachine);
-						
-			if (newTime < sol_local_vnd.time) {
-				sol_local_vnd.time = newTime;
-				sol_local_vnd.assignedOrders = newAssignedOrders;
-//				System.out.println("\nExecute 1-1 AGAIN\n");
-				k = 0;
-			} else {
-				k++;
-			}
-		}
-		
-		System.out.println("BestVND Time: " + sol_local_vnd.time);
-		printOrdersByMachine(sol_local_vnd.assignedOrders);
-		vnd.areSame(sol_local_vnd.assignedOrders); //Check if array has duplicated orders
-
-	}
-	
+	//add comment
+	/*
+	 * Comment missing
+	 */
 	public ArrayList<ArrayList<Order>> findBestNeighbour(int k) {
-		VND vnd = new VND(sol_greedy, transitionTime);
-		ArrayList<ArrayList<Order>> newOrders;
 		
+		ArrayList<ArrayList<Order>> newOrders;		
 		
-		if(k==0) {
-			newOrders = vnd.execute1_1();
-		} else if(k==1) {
+		if(k == 0) {
+			System.out.println("Executing 1-1 move");
+			newOrders = execute1_1();
+		} else if(k == 1) {
+			System.out.println("Executing 1-0 move");
 			newOrders = execute1_0();
 		} else {
-			newOrders = execute1_0Girls();
+			System.out.println("Executing an improved version of the 1-0 move");
+			newOrders = execute1_0ImprovedVersion();
 		}
-		
 		return newOrders;
 	}
 	
-	//done
+	/*
+	 * Creates an ArrayList<ArrayList<Order>> and swaps the two orders that will lead to the maximum decrease of the overall operation time
+	 */
 	public ArrayList<ArrayList<Order>> execute1_1() {
-		ArrayList<ArrayList<Order>> newOrders = sol_local_vnd.assignedOrders;
 		
-		return newOrders;
+		ArrayList<ArrayList<Order>> bestNewOrders = sol_local_vnd.assignedOrders;
+		
+        SwapOrdersMove swap = new SwapOrdersMove();
+        bestNewOrders = FindBestSwapOrdersMove(swap, orders, transitionTime, bestNewOrders);
+        
+        applyMove(swap, bestNewOrders);
+		
+		return bestNewOrders;
 	}
 	
 	//to do
+	/*
+	 * Comment Missing
+	 */
 	public ArrayList<ArrayList<Order>> execute1_0() {
 		ArrayList<ArrayList<Order>> newOrders = sol_local_vnd.assignedOrders;
                
 		return newOrders;
 	}
 	
-	//done
-	public ArrayList<ArrayList<Order>> execute1_0Girls() {
-		ArrayList<ArrayList<Order>> newOrders = sol_local_vnd.assignedOrders;
+	/*
+	 * Creates an ArrayList<ArrayList<Order>> and moves the order that will lead to the maximum decrease of the overall operation time to another machine
+	 */
+	public ArrayList<ArrayList<Order>> execute1_0ImprovedVersion() {
+		ArrayList<ArrayList<Order>> bestNewOrders = sol_local_vnd.assignedOrders;
 		
-        SwapOrdersMove swap = new SwapOrdersMove();
+        RepositioningOrderMove repositioning = new RepositioningOrderMove();
         
-        FindBestSwapOrdersMove(swap, orders, transitionTime);
-        
-        if (swap.moveTime < sol_local.time) {
-        	applyMove(swap, sol_local_vnd);
-        }
-               
-		return newOrders;
+        repositioning.Initialize();
+    	checksBestMove(repositioning, orders, transitionTime, bestNewOrders);
+    	
+    	bestNewOrders = checksMove(repositioning, bestNewOrders);
+
+		return bestNewOrders;
 	}
 
+	/*
+	 * Finds the positions of the orders whose swap will lead to a decrease of the overall operation time
+	 */
+	private ArrayList<ArrayList<Order>> FindBestSwapOrdersMove(SwapOrdersMove swap, ArrayList<Order> orders, double[][] transitionTime, ArrayList<ArrayList<Order>> bestNewOrders) {
+	    swap.Initialize(sol_local.time);
+	    int l;
+	    int k;
+	    boolean flag1 = false;
+	    boolean flag2 = false;
+	    for (int i = 0; i < bestNewOrders.size(); i++) {
+	    	for (int j = 0; j < bestNewOrders.get(i).size(); j++) {
+	    		if (j == bestNewOrders.get(i).size() - 1) {
+	        		l = i + 1;
+	        		k = 0;
+	        	} else {
+	        		l = i;
+	        		k = j + 1;
+	        	}
+	        	while (!flag1 && !flag2 && !(i == bestNewOrders.size() - 1 && j == bestNewOrders.get(i).size() - 1)) {
+	        		
+	        		double[] timeOfMachine = findOperationTimeOfEachMachine(bestNewOrders, transitionTime);
+	        		timeOfMachine[i] += findTimeNeeded(i, j, transitionTime, bestNewOrders.get(l).get(k)) 
+	        				- findTimeNeeded(i, j, transitionTime, bestNewOrders.get(i).get(j));
+	        		timeOfMachine[l] += findTimeNeeded(l, k, transitionTime, bestNewOrders.get(i).get(j)) 
+	        				- findTimeNeeded(l, k, transitionTime, bestNewOrders.get(l).get(k));
 
+	        		double moveTime = findMaxOperationTime(timeOfMachine);
+    				if (moveTime < swap.moveTime) {
+                    	swap.moveTime = moveTime;
+                    	swap.flag = true;
+                    	swap.machineIndex1[0] = i;
+                    	swap.machineIndex1[1] = j;
+                    	swap.machineIndex2[0] = l;
+                    	swap.machineIndex2[1] = k;
+
+                    }
+
+	        		if (k == bestNewOrders.get(i).size() - 1 && l != bestNewOrders.size() - 1) {
+	        			l++;
+	        			k = 0;
+	        		} else {
+	        			k++;
+	        		}
+
+	        		// checking if we have compared our order with all the following ones
+	        		if (l == bestNewOrders.size() - 1 && k == bestNewOrders.get(l).size()) {
+	        			flag1 = true;
+	        		}
+	        		// checking if we have reached the pen-ultimate order
+	        		if (i == bestNewOrders.size() - 1 && j == bestNewOrders.get(l).size() - 2) {
+	        			flag2 = true;
+	        		}
+	        	}
+	    	}
+	    }
+	    
+	    return bestNewOrders;
+	}
+	
+	/*
+	 * Swaps the orders found at FindBestSwapOrdersMove
+	 */
+	private void applyMove(SwapOrdersMove swap, ArrayList<ArrayList<Order>> bestNewOrders) {
+        if (swap.flag)
+        {
+            Order s1 = bestNewOrders.get(swap.machineIndex1[0]).get(swap.machineIndex1[1]);
+            Order s2 = bestNewOrders.get(swap.machineIndex2[0]).get(swap.machineIndex2[1]);
+
+            bestNewOrders.get(swap.machineIndex1[0]).set(swap.machineIndex1[1], s2);
+            bestNewOrders.get(swap.machineIndex2[0]).set(swap.machineIndex2[1], s1);
+        }
+    }
+	
+	/*
+	 * A method to check how many orders are same in the Array.
+	 * 
+	 * If count=100, then every order is different.
+	 * If notsame=9900, then every order is different (10000 - 100 from which 100 are the same)
+	 */
+	public void areSame(ArrayList<ArrayList<Order>> initialOrder) {
+		int count=0,all=0, notsame=0;
+		for(int i = 0; i < initialOrder.size(); i++) {
+			for(int j = 0; j < initialOrder.get(i).size(); j++) {
+				int ord = initialOrder.get(i).get(j).ID;
+				
+				for(int k = 0; k < initialOrder.size(); k++) {
+					for(int m = 0; m < initialOrder.get(k).size(); m++) {
+						all++;
+						if (ord == initialOrder.get(k).get(m).ID){
+							count++;
+						}
+						
+						if(ord != initialOrder.get(k).get(m).ID) {
+							notsame++;
+						}
+					}
+				}
+				
+			}
+		}
+		System.out.println("SAME ARE: "+ count+ " AND ALL ARE: " + all + " AND NOT SAME: " + notsame);
+	}
+
+	/*
+	 * Checks to find the best move to be made
+	 */
+	public void checksBestMove(RepositioningOrderMove repositioning, ArrayList<Order> orders, double[][] transitionTime, ArrayList<ArrayList<Order>> bestNewOrders) {
+		double[] timeOfMachine = findOperationTimeOfEachMachine(bestNewOrders, transitionTime);
+		
+		int[] machineIndex1 = new int[2];
+	    int machineIndex2;
+		int k = findMaxOperationTimePosition(timeOfMachine);
+		int l = findMinOperationTimePosition(timeOfMachine);
+		machineIndex1[0] = k;
+		for (int m = 0; m < bestNewOrders.get(k).size(); m++) {
+			machineIndex1[1] = m;
+			// checking if the last order within the machine with the maximum time is of the same darkness as the last order within the machine with the minimum time
+			if (bestNewOrders.get(machineIndex1[0]).get(machineIndex1[1]).dark == 
+					(bestNewOrders.get(l).get(bestNewOrders.get(l).size()-1)).dark) {
+				machineIndex2 = l;
+				// finding the machine with the minimum operation time among those that have an order of the same darkness assigned to their last position	
+			} else {
+				double pickedMachineTime = findMaxOperationTime(timeOfMachine);
+				int pos = k;
+				for (int i = 0; i < bestNewOrders.size(); i++) {
+					if (i != machineIndex1[0] && i != m) {
+						if (bestNewOrders.get(machineIndex1[0]).get(machineIndex1[1]).dark == 
+								(bestNewOrders.get(i).get(bestNewOrders.get(i).size()-1)).dark && 
+								timeOfMachine[i] < pickedMachineTime) {
+							machineIndex2 = k;
+							pickedMachineTime = timeOfMachine[i];
+							pos = i;
+						}
+					}
+				}
+				machineIndex2 = pos;
+			}
+			
+			timeOfMachine[machineIndex1[0]] -=  findTimeNeeded(machineIndex1[0], machineIndex1[1], transitionTime, bestNewOrders.get(machineIndex1[0]).get(machineIndex1[0]));
+    		timeOfMachine[machineIndex2] += findTimeNeeded(machineIndex2, bestNewOrders.get(machineIndex2).size() - 1, transitionTime, bestNewOrders.get(machineIndex1[0]).get(machineIndex1[0]));
+    		
+			double moveTime = findMaxOperationTime(timeOfMachine);
+			if (moveTime < repositioning.moveTime) {
+				repositioning.moveTime = moveTime;
+				repositioning.machineIndex1[0] = machineIndex1[0];
+				repositioning.machineIndex1[1] = machineIndex1[1];
+				repositioning.machineIndex2 = machineIndex2;
+			}
+		}
+		
+	}
+	
+	/*
+	 * Checks the swap of  the orders found at checksBestMove
+	 */
+	private ArrayList<ArrayList<Order>> checksMove(RepositioningOrderMove repositioning, ArrayList<ArrayList<Order>> bestNewOrders) {
+
+		Order s = bestNewOrders.get(repositioning.machineIndex1[0]).get(repositioning.machineIndex1[1]);
+        	
+		bestNewOrders.get(repositioning.machineIndex1[0]).remove(repositioning.machineIndex1[1]);
+		bestNewOrders.get(repositioning.machineIndex2).add(s);
+
+    	return bestNewOrders;
+    	
+    }
 }
