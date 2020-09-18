@@ -4,5 +4,5 @@ public class Order {
 	 public double quantity;
 	 public int ID;
 	 public boolean isPicked = false;
-	 
+
 }
