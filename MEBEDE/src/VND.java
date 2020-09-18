@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class VND {
 	
@@ -9,54 +8,15 @@ public class VND {
 	private static Solution sol;
 	private static double[][] tt;
 	
+
 	public VND(Solution sol, double[][] tt) {
-		VND.sol = sol;	
-		VND.tt = tt;
+		this.sol = sol;	
+		this.tt = tt;
 	}
-	
-	public void executeVND() {
-		System.out.println("\n\nSTARTING VND\n");
-		ArrayList<ArrayList<Order>> newAssignedOrders;
-		double newTime;
-		int k = 0;
-		
-		while(k < 3) {
-			newAssignedOrders = findBestNeighbour(k); //Searching neighbor solutions
-			double[] timeOfMachine = solver.findOperationTimeOfEachMachine(newAssignedOrders, tt);
-			newTime = solver.findMaxOperationTime(timeOfMachine);
 
-			if (newTime < sol.time) {
-				sol.time = newTime;
-				sol.assignedOrders = newAssignedOrders;
-				
-//				System.out.println("\nExecute 1-1 AGAIN\n");
-				
-				k = 0;
-			} else {
-				k++;
-			}
-		}
-
-		System.out.println("BestVND Time: " + sol.time);
-		solver.printOrdersByMachine(sol.assignedOrders);
-		areSame(sol.assignedOrders); //Check if array has duplicated orders
-
-	}
 	
-	public static ArrayList<ArrayList<Order>> findBestNeighbour(int k) {
-		ArrayList<ArrayList<Order>> newOrders;
-		
-		if(k==0) {
-			newOrders = execute1_1();
-		} else if(k==1) {
-			newOrders = execute1_0();
-		} else {
-			newOrders = executeOurs();
-		}
-		return newOrders;
-	}
 	
-	public static ArrayList<ArrayList<Order>> execute1_1() {
+	public ArrayList<ArrayList<Order>> execute1_1() {
 		ArrayList<ArrayList<Order>> initialOrder = sol.assignedOrders;
 		ArrayList<ArrayList<Order>> newOrders = sol.assignedOrders;
 		ArrayList<ArrayList<Order>> bestNewOrders = sol.assignedOrders;
@@ -142,7 +102,7 @@ public class VND {
 	 * If count=100, then every order is different.
 	 * If notsame=9900, then every order is different (10000 - 100 from which 100 are the same)
 	 */
-	public static void areSame(ArrayList<ArrayList<Order>> initialOrder) {
+	public void areSame(ArrayList<ArrayList<Order>> initialOrder) {
 		int count=0,all=0, notsame=0;
 		for(int i = 0; i < initialOrder.size(); i++) {
 			for(int j = 0; j < initialOrder.get(i).size(); j++) {
@@ -163,7 +123,7 @@ public class VND {
 				
 			}
 		}
-		System.out.println("SAME ARE: "+ count+ " AND ALL ARE: " + count + " AND NOT SAME: " + notsame);
+		System.out.println("SAME ARE: "+ count+ " AND ALL ARE: " + all + " AND NOT SAME: " + notsame);
 	}
 
 }
