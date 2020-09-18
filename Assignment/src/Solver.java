@@ -112,17 +112,18 @@ public class Solver {
 	void localSearch() {
 		sol_local = sol_greedy;
 		
-        SwapOrdersMove swap = new SwapOrdersMove();
-        swap.Initialize();
-        // repeating the algorithm 500 times
-        for (int i = 0; i < 1; i++) {
-            findBestMove(swap, orders, transitionTime);
-            if (swap.moveTime - sol_local.time >= 0) {
+        RepositioningOrderMove repositioning = new RepositioningOrderMove();
+        // repeating the algorithm 3 times
+        for (int i = 0; i < 3; i++) {
+            repositioning.Initialize();
+        	findBestMove(repositioning, orders, transitionTime);
+            // checking if we have reached a local minimum
+            if (repositioning.moveTime >= sol_local.time) {
             	System.out.println("\nThe solution can not be improved any further.");
             	break;
             }
             
-           	applyMove(swap);
+           	applyMove(repositioning);
             
             double[] timeOfMachine = findOperationTimeOfEachMachine(sol_local.assignedOrders, transitionTime);
             sol_local.time = findMaxOperationTime(timeOfMachine);
@@ -330,50 +331,47 @@ public class Solver {
 	/*
 	 * Finds the best move to be made
 	 */
-	public void findBestMove(SwapOrdersMove swap, ArrayList<Order> orders, double[][] transitionTime) {
+	public void findBestMove(RepositioningOrderMove repositioning, ArrayList<Order> orders, double[][] transitionTime) {
 		double[] timeOfMachine = findOperationTimeOfEachMachine(sol_local.assignedOrders, transitionTime);
 		
 		int[] machineIndex1 = new int[2];
-	    int[] machineIndex2 = new int[2];
-		int k = findMinOperationTimePosition(timeOfMachine);
+	    int machineIndex2;
+		int k = findMaxOperationTimePosition(timeOfMachine);
+		int l = findMinOperationTimePosition(timeOfMachine);
 		machineIndex1[0] = k;
 		for (int m = 0; m < sol_local.assignedOrders.get(k).size(); m++) {
 			machineIndex1[1] = m;
 			// checking if the last order within the machine with the maximum time is of the same darkness as the last order within the machine with the minimum time
 			if (sol_local.assignedOrders.get(machineIndex1[0]).get(machineIndex1[1]).dark == 
-					(sol_local.assignedOrders.get(k).get(sol_local.assignedOrders.get(k).size()-1)).dark) {
-				machineIndex2[0] = k;
-				machineIndex2[1] = sol_local.assignedOrders.get(k).size()-1;
+					(sol_local.assignedOrders.get(l).get(sol_local.assignedOrders.get(l).size()-1)).dark) {
+				machineIndex2 = l;
 				// finding the machine with the minimum operation time among those that have an order of the same darkness assigned to their last position	
 			} else {
 				double pickedMachineTime = findMaxOperationTime(timeOfMachine);
 				int pos = k;
 				for (int i = 0; i < sol_local.assignedOrders.size(); i++) {
-					if (i != machineIndex1[0] && i != k) {
+					if (i != machineIndex1[0] && i != m) {
 						if (sol_local.assignedOrders.get(machineIndex1[0]).get(machineIndex1[1]).dark == 
 								(sol_local.assignedOrders.get(i).get(sol_local.assignedOrders.get(i).size()-1)).dark && 
 								timeOfMachine[i] < pickedMachineTime) {
-							machineIndex2[0] = k;
-							machineIndex2[1] = sol_local.assignedOrders.get(k).size()-1;
+							machineIndex2 = k;
 							pickedMachineTime = timeOfMachine[i];
 							pos = i;
 						}
 					}
 				}
-				machineIndex2[0] = pos;
-				machineIndex2[1] = sol_local.assignedOrders.get(pos).size()-1;
+				machineIndex2 = pos;
 			}
 			
-    		timeOfMachine[machineIndex1[0]] -= findTimeNeeded(machineIndex1[0], machineIndex1[1], transitionTime, sol_local.assignedOrders.get(machineIndex1[0]).get(machineIndex1[0]));
-    		timeOfMachine[machineIndex2[0]] += findTimeNeeded(machineIndex2[0], machineIndex2[1], transitionTime, sol_local.assignedOrders.get(machineIndex1[0]).get(machineIndex1[0]));
-
+			timeOfMachine[machineIndex1[0]] -=  findTimeNeeded(machineIndex1[0], machineIndex1[1], transitionTime, sol_local.assignedOrders.get(machineIndex1[0]).get(machineIndex1[0]));
+    		timeOfMachine[machineIndex2] += findTimeNeeded(machineIndex2, sol_local.assignedOrders.get(machineIndex2).size() - 1, transitionTime, sol_local.assignedOrders.get(machineIndex1[0]).get(machineIndex1[0]));
+    		
 			double moveTime = findMaxOperationTime(timeOfMachine);
-			if (moveTime < swap.moveTime) {
-				swap.moveTime = moveTime;
-				swap.machineIndex1[0] = machineIndex1[0];
-				swap.machineIndex1[1] = machineIndex2[1];
-				swap.machineIndex2[0] = machineIndex2[0];
-				swap.machineIndex2[1] = machineIndex2[1];
+			if (moveTime < repositioning.moveTime) {
+				repositioning.moveTime = moveTime;
+				repositioning.machineIndex1[0] = machineIndex1[0];
+				repositioning.machineIndex1[1] = machineIndex1[1];
+				repositioning.machineIndex2 = machineIndex2;
 			}
 		}
 		
@@ -406,23 +404,23 @@ public class Solver {
 			neededTime += transitionTime[sol_local.assignedOrders.get(i).get(j-1).ID - 1][ord.ID - 1];
 		}
 		neededTime += ord.quantity * 6;
-
+		
 		return neededTime;
 	}
 
 	/*
 	 * Swaps the orders found at FindBestSwapOrdersMove
 	 */
-	private void applyMove(SwapOrdersMove swap) {
+	private void applyMove(RepositioningOrderMove repositioning) {
 
-        	Order s = sol_local.assignedOrders.get(swap.machineIndex1[0]).get(swap.machineIndex1[1]);
+		Order s = sol_local.assignedOrders.get(repositioning.machineIndex1[0]).get(repositioning.machineIndex1[1]);
         	
-        	sol_local.assignedOrders.get(swap.machineIndex1[0]).remove(swap.machineIndex1[1]);
-        	sol_local.assignedOrders.get(swap.machineIndex2[0]).add(swap.machineIndex2[1], s);
+        sol_local.assignedOrders.get(repositioning.machineIndex1[0]).remove(repositioning.machineIndex1[1]);
+        sol_local.assignedOrders.get(repositioning.machineIndex2).add(s);
 
-            double[] timeOfMachine = findOperationTimeOfEachMachine(sol_simple.assignedOrders, transitionTime);
-    		sol_local.time = findMaxOperationTime(timeOfMachine);
-    		
+        double[] timeOfMachine = findOperationTimeOfEachMachine(sol_local.assignedOrders, transitionTime);
+    	sol_local.time = findMaxOperationTime(timeOfMachine);
+    	
     }
 
 }
