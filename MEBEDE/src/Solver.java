@@ -474,7 +474,7 @@ public class Solver {
     }
 	
 	public void vnd() {
-		VND vnd = new VND(sol_greedy);
+		VND vnd = new VND(sol_greedy, transitionTime);
 		vnd.executeVND();
 	}
 
