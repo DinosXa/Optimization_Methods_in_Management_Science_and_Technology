@@ -8,7 +8,7 @@ public class VND {
 	private static Solution sol;
 	
 	public VND(Solution sol) {
-		this.sol = sol;	
+		this.sol = sol;
 	}
 	
 	public void executeVND() {

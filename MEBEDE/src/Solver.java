@@ -10,6 +10,7 @@ public class Solver {
 	Solution sol_simple;
 	Solution sol_greedy;
 	Solution sol_local;
+	Solution sol_local_vnd;
 
 	int bday = 19092000;
 	Random ran = new Random(bday);
@@ -119,7 +120,7 @@ public class Solver {
             if (swap.moveTime - sol_local.time >= 0) {
             	break;
             }
-            applyMove(swap);
+            applyMove(swap, sol_local);
             
             double[] timeOfMachine = findOperationTimeOfEachMachine(sol_local.assignedOrders, transitionTime);
             sol_local.time = findMaxOperationTime(timeOfMachine);
@@ -458,24 +459,91 @@ public class Solver {
 	/*
 	 * Swaps the orders found at FindBestSwapOrdersMove
 	 */
-	private void applyMove(SwapOrdersMove swap) {
+	private void applyMove(SwapOrdersMove swap, Solution sol) {
         if (swap.flag)
         {
-            Order s1 = sol_local.assignedOrders.get(swap.machineIndex1[0]).get(swap.machineIndex1[1]);
-            Order s2 = sol_local.assignedOrders.get(swap.machineIndex2[0]).get(swap.machineIndex2[1]);
+            Order s1 = sol.assignedOrders.get(swap.machineIndex1[0]).get(swap.machineIndex1[1]);
+            Order s2 = sol.assignedOrders.get(swap.machineIndex2[0]).get(swap.machineIndex2[1]);
 
-            sol_local.assignedOrders.get(swap.machineIndex1[0]).set(swap.machineIndex1[1], s2);
-            sol_local.assignedOrders.get(swap.machineIndex2[0]).set(swap.machineIndex2[1], s1);
+            sol.assignedOrders.get(swap.machineIndex1[0]).set(swap.machineIndex1[1], s2);
+            sol.assignedOrders.get(swap.machineIndex2[0]).set(swap.machineIndex2[1], s1);
 
-            double[] timeOfMachine = findOperationTimeOfEachMachine(sol_simple.assignedOrders, transitionTime);
-    		sol_local.time = findMaxOperationTime(timeOfMachine);
+            double[] timeOfMachine = findOperationTimeOfEachMachine(sol.assignedOrders, transitionTime);
+            sol.time = findMaxOperationTime(timeOfMachine);
 
         }
     }
 	
 	public void vnd() {
-		VND vnd = new VND(sol_greedy);
-		vnd.executeVND();
+		System.out.println("\n\n");
+		ArrayList<ArrayList<Order>> newAssignedOrders;
+		sol_local_vnd = sol_greedy;
+		double newTime;
+		int k = 0;
+		
+		while(k < 3) {
+			newAssignedOrders = findBestNeighbour(k);
+			double[] timeOfMachine = findOperationTimeOfEachMachine(newAssignedOrders, transitionTime);
+			newTime = findMaxOperationTime(timeOfMachine);
+			
+			//System.out.println("new " + newTime);
+			
+			if (newTime < sol_local_vnd.time) {
+				sol_local_vnd.time = newTime;
+				sol_local_vnd.assignedOrders = newAssignedOrders;
+				k = 0;
+			} else {
+				k++;
+			}
+		}
+		
+		System.out.println("VND: " + sol_local_vnd.time);
+		
 	}
+	
+	public ArrayList<ArrayList<Order>> findBestNeighbour(int k) {
+		ArrayList<ArrayList<Order>> newOrders;
+		
+		
+		if(k==0) {
+			newOrders = execute1_1();
+		} else if(k==1) {
+			newOrders = execute1_0();
+		} else {
+			newOrders = execute1_0Girls();
+		}
+		
+		return newOrders;
+	}
+	
+	//done
+	public ArrayList<ArrayList<Order>> execute1_1() {
+		ArrayList<ArrayList<Order>> newOrders = sol_local_vnd.assignedOrders;
+		
+		return newOrders;
+	}
+	
+	//to do
+	public ArrayList<ArrayList<Order>> execute1_0() {
+		ArrayList<ArrayList<Order>> newOrders = sol_local_vnd.assignedOrders;
+               
+		return newOrders;
+	}
+	
+	//done
+	public ArrayList<ArrayList<Order>> execute1_0Girls() {
+		ArrayList<ArrayList<Order>> newOrders = sol_local_vnd.assignedOrders;
+		
+        SwapOrdersMove swap = new SwapOrdersMove();
+        
+        FindBestSwapOrdersMove(swap, orders, transitionTime);
+        
+        if (swap.moveTime < sol_local.time) {
+        	applyMove(swap, sol_local_vnd);
+        }
+               
+		return newOrders;
+	}
+
 
 }
