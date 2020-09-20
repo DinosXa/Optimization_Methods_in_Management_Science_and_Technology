@@ -488,17 +488,17 @@ public class Solver {
 		double bestTime = 999999999;
 		int v1=0,v2=0,v3=0,v4=0;
 		
-		for(int i = 0; i < initialOrder.size(); i++) { //all machines
-			for(int j = 0; j < initialOrder.get(i).size(); j++) { //all orders in machine i
+		for(int i = 0; i < initialOrder.size(); i++) { // all machines
+			for(int j = 0; j < initialOrder.get(i).size(); j++) { // all orders in machine i
 				
 				order1 = initialOrder.get(i).get(j);
 				
-				for(int k = 0; k < initialOrder.size(); k++) { //all machines
-					for(int m = 0; m < initialOrder.get(k).size(); m++) { //all orders in machine k
+				for(int k = 0; k < initialOrder.size(); k++) { // all machines
+					for(int m = 0; m < initialOrder.get(k).size(); m++) { // all orders in machine k
 						
 						if(i != k && j != m) {
 							order2 = newOrders.get(k).get(m);
-							//Change order1 with order2
+							// Changing order1 with order2
 							newOrders.get(k).set(m, order1);
 							newOrders.get(i).set(j, order2);
 
@@ -507,17 +507,17 @@ public class Solver {
 														
 							if(newTime < bestTime) {						
 								/*
-								 * Storing values of the must-changed orders
+								 * Storing values of the to-be-changed orders
 								 * 
-								 * v1 and v2 are order1
-								 * v3 and v4 are order2
+								 * v1 and v2 correspond to order1
+								 * v3 and v4 correspond to order2
 								 */
 								v1=i;v2=j;v3=k;v4=m;
 								bestTime = newTime;
 								bestNewOrders = newOrders;
-								
 							}
-							//Set orders to their initial position, before exchange
+							
+							// Repositioning orders to their initial position, before the exchange
 							order2 = newOrders.get(i).get(j);
 							newOrders.get(k).set(m, order2);
 							newOrders.get(i).set(j, order1);
@@ -550,28 +550,28 @@ public class Solver {
 		Order orderToMove;
 		double bestTime = 999999999;
 		
-		for(int i = 0; i < initialOrder.size(); i++) { //all machines
-			for(int j = 0; j < initialOrder.get(i).size(); j++) { //all orders in machine i
+		for(int i = 0; i < initialOrder.size(); i++) { // all machines
+			for(int j = 0; j < initialOrder.get(i).size(); j++) { // all orders in machine i
 				
-				orderToMove = newOrders.get(i).get(j); //get the order that will me moved
-				newOrders.get(i).remove(j); //remove the order, that will be moved, from its initial position
+				orderToMove = newOrders.get(i).get(j); // getting the order that will be moved
+				newOrders.get(i).remove(j); // removing the order that will be moved from its initial position
 				
-				for(int k = 0; k < newOrders.size(); k++) { //all machines
-					for(int m = 0; m < newOrders.get(k).size(); m++) { //all orders in machine k
+				for(int k = 0; k < newOrders.size(); k++) { // all machines
+					for(int m = 0; m < newOrders.get(k).size(); m++) { // all orders in machine k
 						
 						if(i != k && j != m) {
 							
-							//Move the orderToMove to machine k in the position m and shift all other orders in this machine.
+							// Moving the orderToMove to machine k in the position m and shifting all other orders in this machine
 							newOrders.get(k).add(m, orderToMove);
 							
 							double[] timeOfMachine = findOperationTimeOfEachMachine(newOrders, transitionTime);
 							double newTime = findMaxOperationTime(timeOfMachine);
-														
+													
 							if(newTime < bestTime) {						
 								bestTime = newTime;
 								bestNewOrders = newOrders;	
 							}
-							//Set order to their initial position, before exchange
+							// Repositioning orders to their initial position, before the exchange
 							newOrders.get(k).remove(m);
 						}
 					}
